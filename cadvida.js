@@ -2,21 +2,20 @@
 
 const mongoose=require("mongoose");
 const express = require("express");
-const bodyparser = require("body-parser");
+const bodyParser = require("body-parser");
 
-// configurando o express para o postamn e para usar a pagina
+// configurando o express para o postman e para usar a pagina
 
 const app = express();
-app.use(bodyparser.json());
+app.use(bodyParser.urlencoded({extended : true}));
 const port =3000;
 
 // configurando o banco de dados
 mongoose.connect("mongodb://127.0.0.1:27017/dbvida",
 {
-    useNewUrlParser:true,
-    useUnifiedTopology : true,
-}
-)
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+}); 
 
 // criando a model a do seu projeto
 
@@ -43,15 +42,31 @@ app.post("/cadastrousuario" , async(req , res)=>{
     const cep = req.body.cep;
     const nascimento = req.body.nascimento;
 
+    //validação de campos
 
-const usuario = new Usuario({
-    nome : nome,
-    email : email,
-    endereco : endereco,
-    numero : numero,
-    cep : cep,
-    nascimento : nascimento
-})
+    if(nome==null || email ==null|| endereco==null || numero==null || cep ==null || nascimento ==null){
+        return res.status(400).json({error : "Preencher todos os campos"});
+
+    }
+
+    //teste de duplicação
+    const emailExiste = await Usuario.findOne({email : email});
+
+    if(emailExiste){
+        return res.status(400).json({error : "O email informado ja existe"});
+    }
+
+
+
+
+    const usuario = new Usuario({
+        nome : nome,
+        email : email,
+        endereco : endereco,
+        numero : numero,
+        cep : cep,
+        nascimento : nascimento
+});
 
 try{
     const newUsuario = await usuario.save();
@@ -60,10 +75,17 @@ try{
 
 });
 
-app.get("/" , async(req, res)=>{
-    res.sendFile(__dirname + "/index.html")
-});
 
+//rota de get de formulario
+
+app.get("/cadastrousuario", async(req, res)=>{
+    res.sendFile(__dirname + "/cadastrousuario.html")
+  });
+  
+app.get("/", async(req, res)=>{
+      res.sendFile(__dirname + "/index.html")
+  });
+  
 app.listen(port, ()=>{
     console.log(`Servidor rodando na porta ${port}`)
 })
